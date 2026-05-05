@@ -14,6 +14,7 @@ Project để quản lý các trang web cá nhân, kiểm tra dữ liệu, đăn
 
 ## Cấu Trúc Thư Mục
 - `src/` - Script chính (check data, post article)
+- `skills/` - Các chức năng tự động (dang-bai, ...)
 - `data/` - Dữ liệu website (JSON, CSV)
 - `output/` - Kết quả check, report
 - `websites.json` - Danh sách website quản lý
@@ -45,11 +46,12 @@ python src/post_article.py
 Đăng bài lên website tự động với AI content generation:
 
 ```bash
-# Chạy trực tiếp từ terminal
-python src/dang_bai_skill.py
+# Chạy từ thư mục gốc
+python skills/dang-bai/main.py
 
-# Hoặc từ Claude Code (nếu skill đã đăng ký)
-/dang-bai
+# Hoặc vào thư mục skill
+cd skills/dang-bai
+python main.py
 ```
 
 Skill sẽ hỏi:
