@@ -1,5 +1,8 @@
 # Đức - Quản Lý Web
 
+## Vai Trò
+Quản trị web cho các web cá nhân
+
 ## Mô Tả
 Project để quản lý các trang web cá nhân, kiểm tra dữ liệu, đăng bài lên các website.
 
@@ -36,6 +39,34 @@ python src/post_article.py
 - Python 3.x (requests, BeautifulSoup4, Selenium - optional)
 - JSON/CSV cho data
 - Bash scripts
+
+## Skill: Đăng Bài Tự Động
+
+Đăng bài lên website tự động với AI content generation:
+
+```bash
+# Chạy trực tiếp từ terminal
+python src/dang_bai_skill.py
+
+# Hoặc từ Claude Code (nếu skill đã đăng ký)
+/dang-bai
+```
+
+Skill sẽ hỏi:
+1. Website nào? (1. Tech Update Daily, 2. Discovering AI World)
+2. Tiêu đề bài viết?
+3. Category (tùy chọn, mặc định: News)
+4. Đăng ngay hay lưu nháp? (ngay/nap, mặc định: nap)
+
+Sau đó tự động:
+- Tạo nội dung HTML với Groq AI (1500-2000 từ)
+- Tạo ảnh featured với Stability AI
+- Upload ảnh lên WordPress
+- Tạo Table of Contents tự động
+- Thêm dấu gạch vàng (#FFAD00) trước h2
+- Đăng bài hoặc lưu nháp
+
+Xem chi tiết: `SKILL_USAGE.md`
 
 ## Tips cho Claude Code
 - Tập trung vào: Kiểm tra data website, đăng bài, quản lý danh sách

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "PowerShell(python -m pip install requests --quiet)",
+      "Bash(python test_wordpress_login.py)",
+      "Bash(Select-String -Pattern \"\\\\.env|\\\\.gitignore|requirements\")",
+      "Bash(pip list *)",
+      "PowerShell(python -c \"import dotenv; print\\('dotenv OK'\\)\" 2>&1)",
+      "PowerShell(python -c \"import dotenv\" 2>&1)",
+      "PowerShell(python -c \"import logging; import csv; import json; import os; import argparse; from datetime import datetime; print\\('stdlib OK'\\)\")",
+      "Bash(python src/post_article.py --title \"Test Article from Groq\" --category \"Technology\" --draft)",
+      "Bash(timeout 180 bash -c 'echo \"2\" | python src/post_article.py --title \"Edge Computing and IoT Integration for Smart Cities\" --category \"IoT\" --draft 2>&1')",
+      "Bash(ls -la \"c:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" 2>/dev/null || echo \"Skills folder does not exist yet\")",
+      "Read(//c/Users/Admin/.claude/skills\" 2>/dev/**)",
+      "Bash(ls -la \"c:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" 2>&1 || echo \"Folder check\")",
+      "Read(//c/Users/Admin/.claude/**)",
+      "Bash(timeout 180 bash -c 'echo -e \"2\\\\nMetaverse and Virtual Reality Innovations\\\\nMetaverse\\\\nnap\" | python src/dang_bai_skill.py 2>&1')",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" -File)"
+    ]
+  }
+}

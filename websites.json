@@ -1,0 +1,28 @@
+{
+  "websites": [
+    {
+      "id": 1,
+      "name": "Tech Update Daily",
+      "url": "https://techupdatedaily.com/",
+      "platform": "wordpress",
+      "admin_url": "https://techupdatedaily.com/wp-login.php",
+      "username": "admin",
+      "app_password_env": "WEBSITE_1_APP_PASSWORD",
+      "status": "active",
+      "last_checked": null,
+      "notes": "Main website"
+    },
+    {
+      "id": 2,
+      "name": "Discovering AI World",
+      "url": "https://discoveringaiworld.com/",
+      "platform": "wordpress",
+      "admin_url": "https://discoveringaiworld.com/wp-login.php",
+      "username": "admin",
+      "app_password_env": "WEBSITE_2_APP_PASSWORD",
+      "status": "active",
+      "last_checked": null,
+      "notes": "Second website"
+    }
+  ]
+}

@@ -51,3 +51,6 @@ desktop.ini
 *.temp
 ~*
 .#*
+
+# Test scripts with credentials
+test_wordpress_login.py
