@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/intercept-dang-bai.sh",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/intercept-dang-bai.ps1",
             "statusMessage": "Processing command..."
           }
         ]

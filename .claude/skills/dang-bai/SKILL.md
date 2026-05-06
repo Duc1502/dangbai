@@ -1,89 +1,28 @@
----
-name: dang-bai
-version: 1.0.0
-description: |
-  Đăng bài viết tự động lên WordPress với AI content generation.
-  Tạo nội dung HTML, ảnh featured, upload WordPress và tạo Table of Contents.
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Glob
----
+# /dang-bai
 
-# /dang-bai — Đăng Bài Tự Động
+Đăng bài tự động lên website với AI content generation.
 
-Đăng bài viết tự động lên một trong hai website (Tech Update Daily hoặc Discovering AI World).
+## Chức Năng
+Hỏi user về:
+1. Website nào (Tech Update Daily hoặc Discovering AI World)
+2. Tiêu đề bài viết
+3. Category (mặc định: News)
+4. Publish ngay hay lưu nháp (mặc định: nháp)
 
-## User-invocable
+Sau đó tự động:
+- Tạo nội dung HTML với Groq AI (1500-2000 từ)
+- Tạo ảnh featured với Stability AI
+- Upload ảnh lên WordPress
+- Tạo Table of Contents tự động
+- Thêm dấu gạch vàng (#FFAD00) trước h2
+- Đăng bài hoặc lưu nháp
 
-Khi user gõ `/dang-bai`, chạy skill này.
-
-## Usage
-
-```
+## Cách Sử Dụng
+```bash
 /dang-bai
 ```
 
-## Quy trình
-
-Script sẽ hỏi bạn:
-
-1. **Website nào?**
-   - 1 = Tech Update Daily (techupdatedaily.com)
-   - 2 = Discovering AI World (discoveringaiworld.com)
-
-2. **Tiêu đề bài viết** (bắt buộc)
-
-3. **Category** (tùy chọn, mặc định: News)
-
-4. **Đăng ngay hay lưu nháp?**
-   - `ngay` = Đăng bài ngay lập tức
-   - `nap` = Lưu nháp (mặc định)
-
-## Tính năng tự động
-
-- ✅ Tạo nội dung HTML bằng Groq AI (1500-2000 từ)
-- ✅ Tạo ảnh featured bằng Stability AI
-- ✅ Upload ảnh lên WordPress Media
-- ✅ Tạo Table of Contents tự động
-- ✅ Thêm dấu gạch vàng (#FFAD00) trước h2
-- ✅ Thêm ảnh embedded trước h2 thứ 3
-- ✅ Đăng bài hoặc lưu nháp
-
-## Setup
-
-Script chính: `skills/dang-bai/main.py`
-
-Yêu cầu:
-- Python 3.x
-- `.env` file với:
-  - GROQ_API_KEY
-  - STABILITY_API_KEY
-  - WordPress credentials (WEBSITE_1_APP_PASSWORD, WEBSITE_2_APP_PASSWORD)
-
-## Ví dụ
-
-```
-/dang-bai
-
-Chon website de dang bai:
-  1. Tech Update Daily              (https://techupdatedaily.com)
-  2. Discovering AI World           (https://discoveringaiworld.com)
-
-Ban chon (1/2): 1
-
-Tieu de bai viet: AI Trends 2026
-
-Category (mac dinh: News): Technology
-
-Publish ngay hay luu nap (ngay/nap, mac dinh: nap): nap
-
-[Script sẽ tạo bài và hiển thị URL...]
-```
-
-## Lưu ý
-
-- Bài viết mặc định lưu **draft** (nháp), edit trên WordPress rồi publish
-- Nếu Stability AI hết credit, bài vẫn được tạo nhưng không có ảnh
-- Xem KNOWN_ISSUES.md nếu gặp lỗi
+## Cấu Trúc File
+- `main.py` - Skill handler, hỏi user thông tin
+- `post_article.py` - Script thực tế đăng bài
+- `logs/` - Lịch sử chạy
