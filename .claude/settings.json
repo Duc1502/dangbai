@@ -1,16 +1,1 @@
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/intercept-dang-bai.ps1",
-            "statusMessage": "Processing command..."
-          }
-        ]
-      }
-    ]
-  }
-}
+{}

@@ -16,7 +16,9 @@
       "Bash(ls -la \"c:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" 2>&1 || echo \"Folder check\")",
       "Read(//c/Users/Admin/.claude/**)",
       "Bash(timeout 180 bash -c 'echo -e \"2\\\\nMetaverse and Virtual Reality Innovations\\\\nMetaverse\\\\nnap\" | python src/dang_bai_skill.py 2>&1')",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" -File)"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Admin\\\\.claude\\\\skills\\\\\" -File)",
+      "Bash(git rm *)",
+      "Bash(git add *)"
     ]
   }
 }
