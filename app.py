@@ -57,7 +57,7 @@ Yêu cầu:
 Format trả về: Chỉ liệt kê 5 tiêu đề, mỗi tiêu đề trên một dòng, không có số thứ tự."""
 
             message = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model="llama-3.1-8b-instant",
                 max_tokens=300,
                 messages=[
                     {"role": "user", "content": prompt}

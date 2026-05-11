@@ -1,1 +1,9 @@
-{}
+{
+  "permissions": {
+    "allow": [
+      "Bash(python app.py)",
+      "Bash(git commit -m 'fix: Use llama-3.1-8b-instant model \\(smallest available Groq model\\) *)",
+      "Bash(git push *)"
+    ]
+  }
+}
