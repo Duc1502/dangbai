@@ -82,14 +82,14 @@ Format: List only 5 titles, one per line, no numbering or bullets."""
 
 @app.route('/api/post-article', methods=['POST'])
 def post_article():
-    temp_image_path = None
+    temp_image_paths = []
     try:
-        # Get form data and file
+        # Get form data and files
         website = request.form.get('website')
         title = request.form.get('title', '').strip()
         category = request.form.get('category', 'News').strip() or 'News'
         publish = request.form.get('publish', 'draft')
-        image_file = request.files.get('image')
+        image_files = request.files.getlist('images')
 
         if not website or website not in ['1', '2']:
             return jsonify({'error': 'Invalid website choice'}), 400
@@ -97,15 +97,17 @@ def post_article():
         if not title:
             return jsonify({'error': 'Title cannot be empty'}), 400
 
-        # Save uploaded image to temp file if provided
-        if image_file and image_file.filename:
+        # Save uploaded images to temp files if provided
+        if image_files:
             try:
-                # Create temp directory
                 temp_dir = tempfile.gettempdir()
-                temp_image_path = os.path.join(temp_dir, 'dang_bai_' + image_file.filename)
-                image_file.save(temp_image_path)
+                for image_file in image_files:
+                    if image_file and image_file.filename:
+                        temp_path = os.path.join(temp_dir, 'dang_bai_' + image_file.filename)
+                        image_file.save(temp_path)
+                        temp_image_paths.append(temp_path)
             except Exception as e:
-                return jsonify({'error': f'Failed to save image: {str(e)}'}), 400
+                return jsonify({'error': f'Failed to save images: {str(e)}'}), 400
 
         # Run post_article.py
         post_article_path = os.path.join(SKILL_DIR, 'post_article.py')
@@ -120,8 +122,8 @@ def post_article():
         if publish == 'draft':
             cmd.append('--draft')
 
-        if temp_image_path:
-            cmd.extend(['--image', temp_image_path])
+        if temp_image_paths:
+            cmd.extend(['--images', ','.join(temp_image_paths)])
 
         os.chdir(PROJECT_ROOT)
 
@@ -161,12 +163,13 @@ def post_article():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        # Clean up temp image file
-        if temp_image_path and os.path.exists(temp_image_path):
-            try:
-                os.remove(temp_image_path)
-            except:
-                pass
+        # Clean up temp image files
+        for temp_path in temp_image_paths:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
 
 if __name__ == '__main__':
     print('\n' + '='*60)

@@ -443,21 +443,26 @@
         <div class="modal-content">
             <div class="modal-header">
                 <span class="close-modal" onclick="closeUploadImageModal()">&times;</span>
-                <h2>Tạo Ảnh Thất Bại</h2>
+                <h2>Upload Ảnh Cho Bài Viết</h2>
             </div>
             <div class="modal-body">
                 <p style="color: #d32f2f; margin-bottom: 15px; font-weight: 600;">
                     ⚠️ Stability AI API đã hết credit để tạo ảnh tự động.
                 </p>
                 <p style="margin-bottom: 15px;">
-                    Vui lòng upload ảnh của bạn để tiếp tục:
+                    Vui lòng upload ảnh (ảnh đầu tiên sẽ làm thumbnail, các ảnh khác rải rác trong bài):
                 </p>
                 <input
                     type="file"
                     id="uploadImageInput"
                     accept="image/*"
+                    multiple
                     style="width: 100%; padding: 12px; border: 2px dashed #ddd; border-radius: 5px; cursor: pointer;"
                 />
+                <p style="margin-top: 10px; font-size: 12px; color: #999;">
+                    Hỗ trợ upload nhiều ảnh cùng lúc
+                </p>
+                <div id="uploadedFilesList" style="margin-top: 15px;"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeUploadImageModal()">Hủy</button>
@@ -713,12 +718,43 @@
         function closeUploadImageModal() {
             document.getElementById('uploadImageModal').style.display = 'none';
             document.getElementById('uploadImageInput').value = '';
+            document.getElementById('uploadedFilesList').innerHTML = '';
         }
 
-        async function retryWithUploadedImage() {
-            const uploadedFile = document.getElementById('uploadImageInput').files[0];
+        // Update file list display when files selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadInput = document.getElementById('uploadImageInput');
+            if (uploadInput) {
+                uploadInput.addEventListener('change', function() {
+                    const filesList = document.getElementById('uploadedFilesList');
+                    filesList.innerHTML = '';
 
-            if (!uploadedFile) {
+                    if (this.files.length > 0) {
+                        const list = document.createElement('ul');
+                        list.style.margin = '0';
+                        list.style.paddingLeft = '20px';
+
+                        for (let i = 0; i < this.files.length; i++) {
+                            const li = document.createElement('li');
+                            const label = i === 0 ? ' (làm thumbnail)' : '';
+                            li.textContent = this.files[i].name + label;
+                            li.style.fontSize = '12px';
+                            li.style.color = '#666';
+                            li.style.marginBottom = '5px';
+                            list.appendChild(li);
+                        }
+
+                        filesList.appendChild(list);
+                    }
+                });
+            }
+        });
+
+        async function retryWithUploadedImage() {
+            const uploadInput = document.getElementById('uploadImageInput');
+            const uploadedFiles = uploadInput.files;
+
+            if (uploadedFiles.length === 0) {
                 alert('Vui lòng chọn file ảnh');
                 return;
             }
@@ -728,8 +764,10 @@
                 return;
             }
 
-            // Add uploaded image to form data
-            lastFormData.set('image', uploadedFile);
+            // Add uploaded images to form data
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                lastFormData.append('images', uploadedFiles[i]);
+            }
 
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
@@ -751,7 +789,6 @@
                     showMessage('OK - ' + result.message, 'success');
                     document.getElementById('form').reset();
                     document.getElementById('categoryGroup').style.display = 'none';
-                    document.getElementById('uploadImageInput').value = '';
                 } else {
                     showMessage('ERROR - ' + (result.error || 'Unknown error'), 'error');
                 }

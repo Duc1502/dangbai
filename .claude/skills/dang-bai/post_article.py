@@ -127,23 +127,30 @@ Return the complete HTML content now."""
     logger.info(f'Noi dung da tao: {len(content)} ky tu')
     return content
 
-# ── Load image from file ──────────────────────────────────────────────────────
-def load_image_from_file(image_path):
-    if not image_path or not os.path.exists(image_path):
-        print(f'[load_image_from_file] ERROR - File not found: {image_path}')
-        logger.error(f'Image file not found: {image_path}')
-        return None
+# ── Load images from files ────────────────────────────────────────────────────
+def load_images_from_files(image_paths):
+    if not image_paths:
+        return []
 
-    try:
-        with open(image_path, 'rb') as f:
-            image_data = f.read()
-        print(f'[load_image_from_file] OK - Image loaded: {len(image_data)} bytes')
-        logger.info(f'Loaded image from file: {image_path} ({len(image_data)} bytes)')
-        return image_data
-    except Exception as e:
-        print(f'[load_image_from_file] ERROR - Failed to read file: {e}')
-        logger.error(f'Failed to load image file: {e}')
-        return None
+    images = []
+    for image_path in image_paths:
+        if not image_path or not os.path.exists(image_path):
+            print(f'[load_images_from_files] WARNING - File not found: {image_path}')
+            logger.warning(f'Image file not found: {image_path}')
+            continue
+
+        try:
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
+            print(f'[load_images_from_files] OK - Image loaded: {len(image_data)} bytes from {os.path.basename(image_path)}')
+            logger.info(f'Loaded image from file: {image_path} ({len(image_data)} bytes)')
+            images.append(image_data)
+        except Exception as e:
+            print(f'[load_images_from_files] WARNING - Failed to read file {image_path}: {e}')
+            logger.warning(f'Failed to load image file {image_path}: {e}')
+            continue
+
+    return images
 
 # ── Generate image with Stability AI ───────────────────────────────────────────
 def generate_image(title, category):
@@ -312,28 +319,39 @@ def add_h2_dividers(html_content):
     html_content = re.sub(pattern, divider + r'\1', html_content)
     return html_content
 
-# ── Insert image before 3rd h2 heading ───────────────────────────────────────────
-def insert_image_before_3rd_h2(html_content, image_url):
-    """Insert image before the 3rd h2 heading"""
-    if not image_url:
+# ── Insert multiple images throughout content ──────────────────────────────────
+def insert_multiple_images(html_content, image_urls):
+    """Insert images throughout the content before h2 headings"""
+    if not image_urls:
         return html_content
 
     h2_count = 0
+    img_index = 0
     pattern = r'<h2[^>]*>'
 
     def replacer(match):
-        nonlocal h2_count
+        nonlocal h2_count, img_index
         h2_count += 1
-        if h2_count == 3:
-            img_html = f'<img src="{image_url}" alt="Article image" style="width: 100%; max-width: 800px; height: auto; margin: 20px 0; display: block; border-radius: 4px;">'
-            return img_html + match.group(0)
+        # Insert images before h2 headings starting from 3rd one, spreading them out
+        if h2_count >= 3 and img_index < len(image_urls):
+            # Insert image every 2 h2 headings
+            if (h2_count - 3) % 2 == 0:
+                img_html = f'<img src="{image_urls[img_index]}" alt="Article image" style="width: 100%; max-width: 800px; height: auto; margin: 20px 0; display: block; border-radius: 4px;">'
+                img_index += 1
+                return img_html + match.group(0)
         return match.group(0)
 
     html_content = re.sub(pattern, replacer, html_content)
+
+    # If any images left, append them to the end
+    while img_index < len(image_urls):
+        html_content += f'<img src="{image_urls[img_index]}" alt="Article image" style="width: 100%; max-width: 800px; height: auto; margin: 20px 0; display: block; border-radius: 4px;">'
+        img_index += 1
+
     return html_content
 
 # ── Format content with date, IDs, dividers, TOC ────────────────────────────────
-def format_html_content(title, content, category, embedded_image_url=None):
+def format_html_content(title, content, category, embedded_image_urls=None):
     # Add IDs to headings
     content = add_heading_ids(content)
 
@@ -346,9 +364,9 @@ def format_html_content(title, content, category, embedded_image_url=None):
     # Add dividers before h2
     content = add_h2_dividers(content)
 
-    # Insert embedded image before 3rd h2
-    if embedded_image_url:
-        content = insert_image_before_3rd_h2(content, embedded_image_url)
+    # Insert embedded images throughout content
+    if embedded_image_urls:
+        content = insert_multiple_images(content, embedded_image_urls)
 
     # Create date string
     now = datetime.now()
@@ -426,7 +444,7 @@ def main():
     parser.add_argument('--title', '-t', required=True, help='Tieu de bai viet')
     parser.add_argument('--category', '-c', default='News', help='Ten category (mac dinh: News)')
     parser.add_argument('--draft', action='store_true', help='Luu nhap thay vi publish ngay')
-    parser.add_argument('--image', '-i', help='Duong dan file anh (neu khong co thi tu tao bang Stability AI)')
+    parser.add_argument('--images', '-i', help='Duong dan file anh (phan cach bang dau phay, neu khong co thi tu tao bang Stability AI)')
     args = parser.parse_args()
 
     status = 'draft' if args.draft else 'publish'
@@ -454,47 +472,58 @@ def main():
         content = generate_content(args.title, args.category)
         print(f'[STEP 1] OK - Content generated: {len(content)} characters')
 
-        # Buoc 2: Tao anh (2 anh - 1 featured, 1 trong bai)
-        print('\n[STEP 2] Processing image...')
+        # Buoc 2: Tao/load anh - anh dau lam featured, anh khac rhai trong bai
+        print('\n[STEP 2] Processing images...')
         media_id = None
-        embedded_media_url = None
+        embedded_media_urls = []
         api_credit_exhausted = False
+        image_data_list = []
 
-        # Check if user provided image file
-        if args.image:
-            print(f'[STEP 2] Loading image from file: {args.image}')
-            image_data = load_image_from_file(args.image)
-        else:
+        # Check if user provided image files
+        if args.images:
+            print(f'[STEP 2] Loading images from files...')
+            image_paths = [p.strip() for p in args.images.split(',')]
+            image_data_list = load_images_from_files(image_paths)
+
+        # If not enough images or no images, try to generate first one
+        if len(image_data_list) == 0:
             print('[STEP 2] Generating image with Stability AI...')
-            image_data = generate_image(args.title, args.category)
+            generated_image = generate_image(args.title, args.category)
             # Check if generation failed due to credit exhaustion
-            if image_data is None:
+            if generated_image is None:
                 api_credit_exhausted = True
+                print('[STEP 2] ERROR_NEED_IMAGE_UPLOAD - Stability AI API credit exhausted, user must upload image')
+                sys.exit(2)
+            image_data_list.append(generated_image)
 
-        # If API credit exhausted and no image provided, request user to upload
-        if api_credit_exhausted and not args.image:
-            print('[STEP 2] ERROR_NEED_IMAGE_UPLOAD - Stability AI API credit exhausted, user must upload image')
-            sys.exit(2)
+        # Upload images
+        if image_data_list:
+            print(f'[STEP 2] OK - {len(image_data_list)} image(s) ready')
 
-        if image_data:
-            print(f'[STEP 2] OK - Image ready: {len(image_data)} bytes')
+            # First image as featured
             try:
                 print('[STEP 2.1] Uploading featured image...')
-                media_id, featured_url = upload_image(image_data, args.title, auth, site_url)
+                media_id, featured_url = upload_image(image_data_list[0], args.title, auth, site_url)
                 print(f'[STEP 2.1] OK - Featured image uploaded: ID={media_id}')
-
-                # Upload anh thu 2 cho embedded image
-                print('[STEP 2.2] Uploading embedded image...')
-                _, embedded_media_url = upload_image(image_data, f'{args.title}-embedded', auth, site_url)
-                print(f'[STEP 2.2] OK - Embedded image uploaded')
             except Exception as e:
-                print(f'[STEP 2] ERROR - Image upload failed: {e}')
-                logger.warning(f'Upload anh that bai: {e}. Tiep tuc khong co anh.')
-        else:
-            print('[STEP 2] WARNING - Image not available (file load or generation failed)')
+                print(f'[STEP 2.1] ERROR - Featured image upload failed: {e}')
+                logger.warning(f'Upload featured image that bai: {e}')
 
-        # Format with date, IDs, dividers, TOC, embedded image
-        content = format_html_content(args.title, content, args.category, embedded_media_url)
+            # Remaining images as embedded
+            for idx, img_data in enumerate(image_data_list[1:], 1):
+                try:
+                    print(f'[STEP 2.{idx+1}] Uploading embedded image {idx}...')
+                    _, media_url = upload_image(img_data, f'{args.title}-img{idx}', auth, site_url)
+                    embedded_media_urls.append(media_url)
+                    print(f'[STEP 2.{idx+1}] OK - Embedded image {idx} uploaded')
+                except Exception as e:
+                    print(f'[STEP 2.{idx+1}] WARNING - Embedded image {idx} upload failed: {e}')
+                    logger.warning(f'Upload embedded image {idx} that bai: {e}')
+        else:
+            print('[STEP 2] WARNING - No images available')
+
+        # Format with date, IDs, dividers, TOC, embedded images
+        content = format_html_content(args.title, content, args.category, embedded_media_urls)
 
         # Buoc 3: Category
         category_id = None
