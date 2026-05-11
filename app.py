@@ -36,15 +36,15 @@ def suggest_titles():
         if not keyword:
             return jsonify({'error': 'Keyword cannot be empty'}), 400
 
-        # Try using OpenAI API for title suggestions
+        # Try using Groq API for title suggestions
         try:
-            from openai import OpenAI
+            from groq import Groq
 
-            api_key = os.getenv('OPENAI_API_KEY')
+            api_key = os.getenv('GROQ_API_KEY')
             if not api_key:
-                return jsonify({'error': 'OPENAI_API_KEY not configured in .env'}), 500
+                return jsonify({'error': 'GROQ_API_KEY not configured in .env'}), 500
 
-            client = OpenAI(api_key=api_key)
+            client = Groq(api_key=api_key)
 
             prompt = f"""Đưa ra 5 tiêu đề bài viết hấp dẫn và SEO-friendly dựa trên từ khóa: "{keyword}"
 
@@ -57,7 +57,7 @@ Yêu cầu:
 Format trả về: Chỉ liệt kê 5 tiêu đề, mỗi tiêu đề trên một dòng, không có số thứ tự."""
 
             message = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="mixtral-8x7b-32768",
                 max_tokens=300,
                 messages=[
                     {"role": "user", "content": prompt}
@@ -74,7 +74,7 @@ Format trả về: Chỉ liệt kê 5 tiêu đề, mỗi tiêu đề trên một
             })
 
         except ImportError:
-            return jsonify({'error': 'OpenAI library not installed'}), 500
+            return jsonify({'error': 'Groq library not installed'}), 500
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
