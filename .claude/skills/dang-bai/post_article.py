@@ -131,7 +131,7 @@ Return the complete HTML content now."""
 def generate_image(title, category):
     api_key = os.environ.get('STABILITY_API_KEY', '')
     if not api_key:
-        print('[generate_image] ❌ STABILITY_API_KEY not found in .env')
+        print('[generate_image] ERROR - STABILITY_API_KEY not found in .env')
         logger.warning('STABILITY_API_KEY chua duoc set, bo qua anh')
         return None
 
@@ -162,15 +162,15 @@ def generate_image(title, category):
         print(f'[generate_image] Response status: {r.status_code}')
 
         if r.status_code == 200:
-            print(f'[generate_image] ✅ Image generated successfully ({len(r.content)} bytes)')
+            print(f'[generate_image] OK - Image generated successfully ({len(r.content)} bytes)')
             logger.info('Anh da tao thanh cong')
             return r.content
         else:
-            print(f'[generate_image] ❌ API returned {r.status_code}: {r.text[:200]}')
+            print(f'[generate_image] ERROR - API returned {r.status_code}: {r.text[:200]}')
             logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
             return None
     except Exception as e:
-        print(f'[generate_image] ❌ Exception: {str(e)}')
+        print(f'[generate_image] ERROR - Exception: {str(e)}')
         logger.error(f'Image generation exception: {str(e)}')
         return None
 
@@ -430,7 +430,7 @@ def main():
         # Buoc 1: Tao noi dung
         print('\n[STEP 1] Generating content...')
         content = generate_content(args.title, args.category)
-        print(f'[STEP 1] ✅ Content generated: {len(content)} characters')
+        print(f'[STEP 1] OK - Content generated: {len(content)} characters')
 
         # Buoc 2: Tao anh (2 anh - 1 featured, 1 trong bai)
         print('\n[STEP 2] Generating image...')
@@ -439,21 +439,21 @@ def main():
         image_data = generate_image(args.title, args.category)
 
         if image_data:
-            print(f'[STEP 2] ✅ Image generated: {len(image_data)} bytes')
+            print(f'[STEP 2] OK - Image generated: {len(image_data)} bytes')
             try:
                 print('[STEP 2.1] Uploading featured image...')
                 media_id, featured_url = upload_image(image_data, args.title, auth, site_url)
-                print(f'[STEP 2.1] ✅ Featured image uploaded: ID={media_id}, URL={featured_url}')
+                print(f'[STEP 2.1] OK - Featured image uploaded: ID={media_id}')
 
                 # Upload anh thu 2 cho embedded image
                 print('[STEP 2.2] Uploading embedded image...')
                 _, embedded_media_url = upload_image(image_data, f'{args.title}-embedded', auth, site_url)
-                print(f'[STEP 2.2] ✅ Embedded image uploaded: URL={embedded_media_url}')
+                print(f'[STEP 2.2] OK - Embedded image uploaded')
             except Exception as e:
-                print(f'[STEP 2] ❌ Image upload failed: {e}')
+                print(f'[STEP 2] ERROR - Image upload failed: {e}')
                 logger.warning(f'Upload anh that bai: {e}. Tiep tuc khong co anh.')
         else:
-            print('[STEP 2] ⚠️  Image generation returned None (failed or API key missing)')
+            print('[STEP 2] WARNING - Image generation returned None (failed or API key missing)')
 
         # Format with date, IDs, dividers, TOC, embedded image
         content = format_html_content(args.title, content, args.category, embedded_media_url)
