@@ -152,20 +152,90 @@ def load_images_from_files(image_paths):
 
     return images
 
-# ── Generate image with Stability AI ───────────────────────────────────────────
+# ── Generate image with Gemini AI ────────────────────────────────────────────
+def generate_image_with_gemini(title, category):
+    try:
+        from google import genai
+        from google.genai import types
+        from io import BytesIO
+    except ImportError:
+        print('[generate_image_gemini] ERROR - google-genai library not installed')
+        logger.error('google-genai library not installed')
+        return None
+
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        print('[generate_image_gemini] ERROR - GEMINI_API_KEY not found in .env')
+        logger.warning('GEMINI_API_KEY not configured')
+        return None
+
+    print(f'[generate_image_gemini] Starting image generation for: {title}')
+    logger.info(f'Generating image with Gemini AI: {title}')
+
+    prompt = f"Professional blog featured image for article about '{title}' in {category} category. Modern design, high quality, professional, eye-catching, suitable for technology and business blog. 4K resolution."
+    print(f'[generate_image_gemini] Prompt: {prompt[:100]}...')
+
+    try:
+        client = genai.Client(api_key=api_key)
+
+        response = client.models.generate_images(
+            model='imagen-4.0-generate-001',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                image_size='1K',
+            )
+        )
+
+        if response.generated_images:
+            print(f'[generate_image_gemini] OK - Image generated successfully')
+            logger.info('Image generated successfully with Gemini')
+            # Return image URL (Gemini returns URL, need to fetch binary)
+            image_url = response.generated_images[0].image.url
+            img_response = requests.get(image_url, timeout=30)
+            if img_response.status_code == 200:
+                print(f'[generate_image_gemini] OK - Image downloaded: {len(img_response.content)} bytes')
+                return img_response.content
+            else:
+                print(f'[generate_image_gemini] ERROR - Failed to download image: {img_response.status_code}')
+                return None
+        else:
+            print(f'[generate_image_gemini] ERROR - No images generated')
+            return None
+
+    except Exception as e:
+        print(f'[generate_image_gemini] ERROR - Exception: {str(e)}')
+        logger.error(f'Image generation error: {str(e)}')
+        return None
+
+
+# ── Generate image (router to correct provider) ────────────────────────────────
 def generate_image(title, category):
+    # Check which image provider to use (default: stability)
+    provider = os.environ.get('IMAGE_GENERATOR', 'stability').lower()
+
+    if provider == 'gemini':
+        print('[generate_image] Using Gemini AI for image generation')
+        return generate_image_with_gemini(title, category)
+    else:
+        print('[generate_image] Using Stability AI for image generation')
+        return generate_image_with_stability(title, category)
+
+
+# ── Generate image with Stability AI ───────────────────────────────────────────
+def generate_image_with_stability(title, category):
     api_key = os.environ.get('STABILITY_API_KEY', '')
     if not api_key:
-        print('[generate_image] ERROR - STABILITY_API_KEY not found in .env')
+        print('[generate_image_stability] ERROR - STABILITY_API_KEY not found in .env')
         logger.warning('STABILITY_API_KEY chua duoc set, bo qua anh')
         return None
 
-    print(f'[generate_image] Starting image generation for: {title}')
-    logger.info(f'Dang tao anh voi Stability AI: {title}')
+    print(f'[generate_image_stability] Starting image generation for: {title}')
+    logger.info(f'Generating image with Stability AI: {title}')
 
     # Create prompt from title and category
     prompt = f"Professional blog featured image for article about '{title}' in {category} category. Modern design, high quality, professional, eye-catching, suitable for technology and business blog. 4K resolution."
-    print(f'[generate_image] Prompt: {prompt[:100]}...')
+    print(f'[generate_image_stability] Prompt: {prompt[:100]}...')
 
     try:
         r = requests.post(
@@ -184,23 +254,23 @@ def generate_image(title, category):
             timeout=60
         )
 
-        print(f'[generate_image] Response status: {r.status_code}')
+        print(f'[generate_image_stability] Response status: {r.status_code}')
 
         if r.status_code == 200:
-            print(f'[generate_image] OK - Image generated successfully ({len(r.content)} bytes)')
-            logger.info('Anh da tao thanh cong')
+            print(f'[generate_image_stability] OK - Image generated successfully ({len(r.content)} bytes)')
+            logger.info('Image generated successfully')
             return r.content
         elif r.status_code == 402:
-            print(f'[generate_image] ERROR_402_CREDIT_EXHAUSTED - Stability AI API credit exhausted')
+            print(f'[generate_image_stability] ERROR_402_CREDIT_EXHAUSTED - Stability AI API credit exhausted')
             logger.warning('Stability AI API credit exhausted')
             return None
         else:
-            print(f'[generate_image] ERROR - API returned {r.status_code}: {r.text[:200]}')
-            logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
+            print(f'[generate_image_stability] ERROR - API returned {r.status_code}: {r.text[:200]}')
+            logger.warning(f'Image generation failed: {r.status_code}')
             return None
     except Exception as e:
-        print(f'[generate_image] ERROR - Exception: {str(e)}')
-        logger.error(f'Image generation exception: {str(e)}')
+        print(f'[generate_image_stability] ERROR - Exception: {str(e)}')
+        logger.error(f'Image generation error: {str(e)}')
         return None
 
 # ── Upload image to WordPress ──────────────────────────────────────────────────
