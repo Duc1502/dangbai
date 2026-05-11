@@ -392,7 +392,6 @@ def create_post(title, content, category_id, media_id, status, auth, site_url):
         'title': title,
         'content': f'<!-- wp:html -->{content}<!-- /wp:html -->',
         'status': status,
-        'template': 'elementor_header_footer',
         'categories': [category_id] if category_id else [],
     }
     if media_id:
