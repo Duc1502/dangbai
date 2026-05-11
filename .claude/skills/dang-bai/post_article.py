@@ -380,7 +380,7 @@ def format_html_content(title, content, category, embedded_image_urls=None):
     return final_html
 
 # ── Get or create category ─────────────────────────────────────────────────────
-def get_or_create_category(name, auth, site_url):
+def get_or_create_category(name, auth, site_url, allow_create=True):
     r = requests.get(
         f'{site_url}/wp-json/wp/v2/categories',
         params={'search': name},
@@ -393,6 +393,12 @@ def get_or_create_category(name, auth, site_url):
             logger.info(f'Tim thay category: {name} (ID: {cat["id"]})')
             return cat['id']
 
+    # If not found and create not allowed, return None
+    if not allow_create:
+        logger.warning(f'Category {name} not found and creation not allowed')
+        return None
+
+    # Create new category
     r = requests.post(
         f'{site_url}/wp-json/wp/v2/categories',
         auth=auth,
@@ -405,12 +411,18 @@ def get_or_create_category(name, auth, site_url):
     return cat_id
 
 # ── Create WordPress post ──────────────────────────────────────────────────────
-def create_post(title, content, category_id, media_id, status, auth, site_url):
+def create_post(title, content, category_ids, media_id, status, auth, site_url):
+    # Handle both single ID (backward compatibility) and list of IDs
+    if isinstance(category_ids, int):
+        category_ids = [category_ids]
+    elif category_ids is None:
+        category_ids = []
+
     payload = {
         'title': title,
         'content': f'<!-- wp:html -->{content}<!-- /wp:html -->',
         'status': status,
-        'categories': [category_id] if category_id else [],
+        'categories': category_ids if category_ids else [],
     }
     if media_id:
         payload['featured_media'] = media_id
@@ -526,14 +538,25 @@ def main():
         content = format_html_content(args.title, content, args.category, embedded_media_urls)
 
         # Buoc 3: Category
-        category_id = None
-        try:
-            category_id = get_or_create_category(args.category, auth, site_url)
-        except Exception as e:
-            logger.warning(f'Khong the xu ly category: {e}')
+        category_ids = []
+        category_names = [cat.strip() for cat in args.category.split(',') if cat.strip()]
+        allow_create = len(category_names) == 1  # Only create new category if single category selected
+
+        for cat_name in category_names:
+            try:
+                cat_id = get_or_create_category(cat_name, auth, site_url, allow_create=allow_create)
+                if cat_id:
+                    category_ids.append(cat_id)
+                elif not allow_create:
+                    # If multiple categories and one not found, still post but warn
+                    print(f'[STEP 3] WARNING - Category "{cat_name}" not found in CMS')
+                    logger.warning(f'Category {cat_name} not found')
+            except Exception as e:
+                print(f'[STEP 3] WARNING - Error processing category "{cat_name}": {e}')
+                logger.warning(f'Khong the xu ly category {cat_name}: {e}')
 
         # Buoc 4: Tao post
-        post_id, post_url = create_post(args.title, content, category_id, media_id, status, auth, site_url)
+        post_id, post_url = create_post(args.title, content, category_ids, media_id, status, auth, site_url)
 
         print(f'\n{"="*60}')
         print(f'  HOAN THANH!')
