@@ -393,8 +393,8 @@
                 </div>
             </div>
 
-            <!-- Image Upload (Optional) -->
-            <div class="form-group">
+            <!-- Image Upload (Optional) - Hidden by default -->
+            <div class="form-group" id="imageUploadGroup" style="display: none;">
                 <label for="image">Ảnh Featured (Tùy chọn)</label>
                 <input
                     type="file"
@@ -436,6 +436,34 @@
             <!-- Message -->
             <div class="message" id="message"></div>
         </form>
+    </div>
+
+    <!-- Upload Image Modal (When API credit exhausted) -->
+    <div id="uploadImageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close-modal" onclick="closeUploadImageModal()">&times;</span>
+                <h2>Tạo Ảnh Thất Bại</h2>
+            </div>
+            <div class="modal-body">
+                <p style="color: #d32f2f; margin-bottom: 15px; font-weight: 600;">
+                    ⚠️ Stability AI API đã hết credit để tạo ảnh tự động.
+                </p>
+                <p style="margin-bottom: 15px;">
+                    Vui lòng upload ảnh của bạn để tiếp tục:
+                </p>
+                <input
+                    type="file"
+                    id="uploadImageInput"
+                    accept="image/*"
+                    style="width: 100%; padding: 12px; border: 2px dashed #ddd; border-radius: 5px; cursor: pointer;"
+                />
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeUploadImageModal()">Hủy</button>
+                <button class="btn-suggest" onclick="retryWithUploadedImage()">Tiếp Tục Với Ảnh Này</button>
+            </div>
+        </div>
     </div>
 
     <!-- Title Suggestion Modal -->
@@ -605,6 +633,9 @@
             }
         });
 
+        // Store form data for retry
+        let lastFormData = null;
+
         async function handleSubmit(e) {
             e.preventDefault();
 
@@ -644,6 +675,9 @@
                 formData.append('image', imageFile);
             }
 
+            // Store for potential retry
+            lastFormData = formData;
+
             // Show loading
             submitBtn.disabled = true;
             loading.style.display = 'block';
@@ -661,6 +695,10 @@
                     showMessage('OK - ' + result.message, 'success');
                     form.reset();
                     document.getElementById('categoryGroup').style.display = 'none';
+                } else if (result.error_type === 'NEED_IMAGE_UPLOAD') {
+                    // API credit exhausted, show upload modal
+                    showMessage('', 'error');
+                    document.getElementById('uploadImageModal').style.display = 'block';
                 } else {
                     showMessage('ERROR - ' + (result.error || 'Unknown error'), 'error');
                 }
@@ -671,6 +709,67 @@
                 loading.style.display = 'none';
             }
         }
+
+        function closeUploadImageModal() {
+            document.getElementById('uploadImageModal').style.display = 'none';
+            document.getElementById('uploadImageInput').value = '';
+        }
+
+        async function retryWithUploadedImage() {
+            const uploadedFile = document.getElementById('uploadImageInput').files[0];
+
+            if (!uploadedFile) {
+                alert('Vui lòng chọn file ảnh');
+                return;
+            }
+
+            if (!lastFormData) {
+                alert('Lỗi: Không thể xác định dữ liệu form');
+                return;
+            }
+
+            // Add uploaded image to form data
+            lastFormData.set('image', uploadedFile);
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+
+            // Show loading
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            closeUploadImageModal();
+
+            try {
+                const response = await fetch('/api/post-article', {
+                    method: 'POST',
+                    body: lastFormData,
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('OK - ' + result.message, 'success');
+                    document.getElementById('form').reset();
+                    document.getElementById('categoryGroup').style.display = 'none';
+                    document.getElementById('uploadImageInput').value = '';
+                } else {
+                    showMessage('ERROR - ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showMessage('ERROR - ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const uploadModal = document.getElementById('uploadImageModal');
+            if (e.target === uploadModal) {
+                closeUploadImageModal();
+            }
+        });
 
         function showMessage(text, type) {
             const message = document.getElementById('message');

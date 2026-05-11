@@ -142,6 +142,13 @@ def post_article():
                 'message': 'Article posted successfully!',
                 'output': stdout
             })
+        elif proc.returncode == 2:
+            return jsonify({
+                'success': False,
+                'error': 'Stability AI API credit exhausted. Please upload image to continue.',
+                'error_type': 'NEED_IMAGE_UPLOAD',
+                'output': stdout
+            }), 402
         else:
             return jsonify({
                 'success': False,

@@ -183,6 +183,10 @@ def generate_image(title, category):
             print(f'[generate_image] OK - Image generated successfully ({len(r.content)} bytes)')
             logger.info('Anh da tao thanh cong')
             return r.content
+        elif r.status_code == 402:
+            print(f'[generate_image] ERROR_402_CREDIT_EXHAUSTED - Stability AI API credit exhausted')
+            logger.warning('Stability AI API credit exhausted')
+            return None
         else:
             print(f'[generate_image] ERROR - API returned {r.status_code}: {r.text[:200]}')
             logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
@@ -455,6 +459,7 @@ def main():
         print('\n[STEP 2] Processing image...')
         media_id = None
         embedded_media_url = None
+        api_credit_exhausted = False
 
         # Check if user provided image file
         if args.image:
@@ -463,6 +468,14 @@ def main():
         else:
             print('[STEP 2] Generating image with Stability AI...')
             image_data = generate_image(args.title, args.category)
+            # Check if generation failed due to credit exhaustion
+            if image_data is None:
+                api_credit_exhausted = True
+
+        # If API credit exhausted and no image provided, request user to upload
+        if api_credit_exhausted and not args.image:
+            print('[STEP 2] ERROR_NEED_IMAGE_UPLOAD - Stability AI API credit exhausted, user must upload image')
+            sys.exit(2)
 
         if image_data:
             print(f'[STEP 2] OK - Image ready: {len(image_data)} bytes')
