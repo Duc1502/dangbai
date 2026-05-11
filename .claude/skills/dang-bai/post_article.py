@@ -88,15 +88,17 @@ def generate_content(title, category):
 
 Title: {title}
 Category: {category}
+Language: English
 
 IMPORTANT STRUCTURE REQUIREMENTS:
 - Total length: 1500-2000 words
-- Start with an introductory paragraph
+- Start with an engaging introductory paragraph
 - Include 4-5 main sections, each starting with <h2>Section Title</h2>
 - Within sections, use <h3> for subsections (include 1-2 subsections per section)
 - End with <h2>Conclusion</h2> section
 - Use <p>, <ul>, <li>, <strong>, <em> tags naturally
 - Include keywords related to the title throughout
+- Write in professional, engaging English
 
 CRITICAL - DO NOT ADD NUMBERS TO HEADINGS:
 - NEVER start h2 or h3 headings with numbers (e.g., "1.", "1.1.", "2.", etc.)

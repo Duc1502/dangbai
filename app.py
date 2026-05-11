@@ -46,15 +46,15 @@ def suggest_titles():
 
             client = Groq(api_key=api_key)
 
-            prompt = f"""Đưa ra 5 tiêu đề bài viết hấp dẫn và SEO-friendly dựa trên từ khóa: "{keyword}"
+            prompt = f"""Generate 5 compelling and SEO-friendly blog post titles based on the keyword: "{keyword}"
 
-Yêu cầu:
-- Tiêu đề phải có chứa từ khóa hoặc từ khóa liên quan
-- Tiêu đề phải thu hút sự chú ý
-- Độ dài: 50-70 ký tự
-- Dùng tiếng Việt
+Requirements:
+- Titles must contain the keyword or related keywords
+- Titles must be attention-grabbing and engaging
+- Length: 50-70 characters
+- Use English language
 
-Format trả về: Chỉ liệt kê 5 tiêu đề, mỗi tiêu đề trên một dòng, không có số thứ tự."""
+Format: List only 5 titles, one per line, no numbering or bullets."""
 
             message = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
