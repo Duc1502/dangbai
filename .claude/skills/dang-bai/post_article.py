@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tu dong tao va dang bai viet len WordPress bang Groq AI + Stability AI images.
+Tu dong tao va dang bai viet len WordPress bang ChatGPT + DALL-E images.
 Cach dung:
   python src/post_article.py --title "Tieu de bai" --category "Technology"
 """
@@ -74,11 +74,13 @@ def load_websites():
         }
     return sites
 
-# ── Generate content with Groq API ────────────────────────────────────────────
+# ── Generate content with OpenAI ChatGPT ─────────────────────────────────────
 def generate_content(title, category):
-    api_key = os.environ.get('GROQ_API_KEY', '')
+    from openai import OpenAI
+
+    api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
-        logger.error('GROQ_API_KEY chua duoc set trong .env')
+        logger.error('OPENAI_API_KEY chua duoc set trong .env')
         sys.exit(1)
 
     logger.info(f'Dang tao noi dung cho: {title}')
@@ -112,58 +114,53 @@ FORMAT:
 
 Return the complete HTML content now."""
 
-    r = requests.post(
-        'https://api.groq.com/openai/v1/chat/completions',
-        headers={
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json',
-        },
-        json={
-            'model': 'llama-3.3-70b-versatile',
-            'max_tokens': 4096,
-            'messages': [{'role': 'user', 'content': prompt}],
-            'temperature': 0.7,
-        },
-        timeout=60
+    client = OpenAI(api_key=api_key)
+    message = client.chat.completions.create(
+        model='gpt-3.5-turbo',
+        max_tokens=4096,
+        messages=[{'role': 'user', 'content': prompt}],
+        temperature=0.7,
     )
-    r.raise_for_status()
-    content = r.json()['choices'][0]['message']['content']
+    content = message.choices[0].message.content
     logger.info(f'Noi dung da tao: {len(content)} ky tu')
     return content
 
-# ── Generate image with Stability AI ───────────────────────────────────────────
+# ── Generate image with DALL-E ────────────────────────────────────────────────
 def generate_image(title, category):
-    api_key = os.environ.get('STABILITY_API_KEY', '')
+    from openai import OpenAI
+
+    api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
-        logger.warning('STABILITY_API_KEY chua duoc set, bo qua anh')
+        logger.warning('OPENAI_API_KEY chua duoc set, bo qua anh')
         return None
 
-    logger.info(f'Dang tao anh voi Stability AI: {title}')
+    logger.info(f'Dang tao anh voi DALL-E: {title}')
 
     # Create prompt from title and category
-    prompt = f"Professional blog featured image for article about '{title}' in {category} category. Modern design, high quality, professional, eye-catching, suitable for technology and business blog. 4K resolution."
+    prompt = f"Professional blog featured image for article about '{title}' in {category} category. Modern design, high quality, professional, eye-catching, suitable for technology and business blog. 16:9 aspect ratio."
 
-    r = requests.post(
-        'https://api.stability.ai/v2beta/stable-image/generate/core',
-        headers={
-            'authorization': f'Bearer {api_key}',
-            'accept': 'image/*',
-        },
-        files={'none': ''},
-        data={
-            'prompt': prompt,
-            'negative_prompt': 'blurry, low quality, watermark',
-            'aspect_ratio': '16:9',
-            'output_format': 'jpeg',
-        },
-        timeout=60
-    )
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.images.generate(
+            model='dall-e-3',
+            prompt=prompt,
+            size='1024x576',
+            quality='standard',
+            n=1,
+        )
 
-    if r.status_code == 200:
-        logger.info('Anh da tao thanh cong')
-        return r.content
-    else:
-        logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
+        image_url = response.data[0].url
+
+        # Download image from URL
+        img_response = requests.get(image_url, timeout=30)
+        if img_response.status_code == 200:
+            logger.info('Anh da tao thanh cong')
+            return img_response.content
+        else:
+            logger.warning(f'Tai anh that bai: {img_response.status_code}')
+            return None
+    except Exception as e:
+        logger.warning(f'Tao anh that bai: {str(e)}')
         return None
 
 # ── Upload image to WordPress ──────────────────────────────────────────────────
