@@ -1,147 +1,191 @@
-﻿# HƯỚNG DẪN CÀI ĐẶT - ĐĂNG BÀI TỰ ĐỘNG
+# HƯỚNG DẪN CÀI ĐẶT - ĐĂNG BÀI TỰ ĐỘNG
 
-Đây là hướng dẫn chi tiết để cài đặt và chạy hệ thống đăng bài tự động trên PC của bạn.
+Hệ thống tự động tạo nội dung và đăng bài lên WordPress với AI.
 
 ## YÊU CẦU CÓ SẴN
 
 1. **Python 3.8+** - Tải từ https://www.python.org/downloads/
-2. **OpenAI API Key** - Từ https://platform.openai.com/
-3. **WordPress Admin Credentials** - Username + App Password cho các website
+2. **Groq API Key** (miễn phí) - Từ https://console.groq.com/
+3. **Stability AI API Key** (~$10/tháng) - Từ https://stability.ai/
+4. **WordPress App Password** - Từ mỗi website's wp-admin
 
 ## BƯỚC 1: TẢI VÀ GIẢI NÉN FILE
 
-1. Tải file project từ GitHub hoặc USB
-2. Giải nén vào một thư mục (vd: C:\DangBai\)
-3. Mở PowerShell/Command Prompt
+1. Clone từ GitHub: `git clone https://github.com/Duc1502/dangbai.git`
+2. Hoặc tải file project và giải nén vào thư mục (vd: C:\DangBai\)
+3. Mở Command Prompt / PowerShell
 
 ## BƯỚC 2: CÀI ĐẶT PYTHON LIBRARIES
 
-Mở PowerShell và chạy:
+Chạy file batch (đơn giản nhất):
+```
+install_dependencies.bat
+```
 
-\\\powershell
-cd "C:\DangBai"
+Hoặc dùng Command Prompt:
+```
+cd C:\DangBai
 python -m pip install -r requirements.txt
-\\\
+```
 
 Đợi cho đến khi tất cả libraries được cài đặt.
 
 ## BƯỚC 3: CẤU HÌNH .env FILE
 
-1. Mở file .env bằng Notepad
-2. Thay các giá trị:
+1. Mở file `.env` bằng Notepad
+2. Điền các API keys và WordPress credentials:
 
-\\\
+```env
 # Website URLs
 WEBSITE_1_URL=https://techupdatedaily.com/
-WEBSITE_1_ADMIN_URL=https://techupdatedaily.com/wp-login.php
-
 WEBSITE_2_URL=https://discoveringaiworld.com/
-WEBSITE_2_ADMIN_URL=https://discoveringaiworld.com/wp-login.php
 
-# WordPress Credentials
+# WordPress Credentials (App Password, không phải password thường)
 WEBSITE_1_USERNAME=admin
-WEBSITE_1_APP_PASSWORD=GKfb xxPi D1As e6Sk T7bK 8wLN
+WEBSITE_1_APP_PASSWORD=xxxx xxxx xxxx xxxx xxxx xxxx
 
 WEBSITE_2_USERNAME=admin
-WEBSITE_2_APP_PASSWORD=ydwt 0B1a Pl74 9aUi BRRS 7Eiq
+WEBSITE_2_APP_PASSWORD=xxxx xxxx xxxx xxxx xxxx xxxx
 
-# API Keys
-OPENAI_API_KEY=sk_...PASTE_YOUR_KEY_HERE...
+# API Keys (BẮTBUỘC)
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STABILITY_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# Other
+# Cấu hình khác
 LOG_LEVEL=INFO
-OUTPUT_FORMAT=json
-\\\
+```
 
-⚠️ **QUAN TRỌNG**: Thay sk_... bằng OpenAI API key thực của bạn
+3. Nhấn Ctrl+S để lưu
 
-3. Lưu file
+### Lấy API Keys:
+
+**Groq API (Miễn phí)**
+- Vào https://console.groq.com/
+- Đăng nhập → Settings → API Keys
+- Copy key → Paste vào .env
+
+**Stability AI API (~$10 credit/tháng)**
+- Vào https://stability.ai/
+- Đăng nhập → Dashboard → API Keys
+- Copy key → Paste vào .env
+
+**WordPress App Password**
+- Vào WordPress Admin → Settings → Application Passwords
+- Tạo app password mới (không phải password đăng nhập)
+- Copy → Paste vào .env
 
 ## BƯỚC 4: CHẠY WEB INTERFACE
 
-Mở PowerShell tại thư mục project và chạy:
+**Cách đơn giản nhất:** Double-click `run.bat`
 
-\\\powershell
+**Hoặc dùng Command Prompt:**
+```
 python app.py
-\\\
+```
 
-Output sẽ hiển thị:
-
-\\\
+Sẽ thấy:
+```
 ============================================================
   DANG BAI WEB INTERFACE
 ============================================================
 
 Truy cập: http://localhost:5000
 Nhấn Ctrl+C để dừng server
-\\\
+```
 
 Mở trình duyệt → http://localhost:5000
 
 ## CÁCH DÙNG
 
-### 1. Gợi ý Tiêu Đề
-- Click vào icon ✨ bên cạnh ô "Tiêu Đề Bài Viết"
-- Nhập từ khóa (vd: "AI", "ChatGPT", "Security")
-- Click "Gợi ý Tiêu Đề" → Chọn 1 trong 5 tiêu đề được gợi ý
+### 1. Gợi ý Tiêu Đề (Tùy chọn)
+- Click icon ✨ bên ô "Tiêu Đề Bài Viết"
+- Nhập từ khóa (vd: "AI", "ChatGPT")
+- Click "Gợi ý Tiêu Đề" → Chọn 1 tiêu đề
 
 ### 2. Điền Thông Tin
 - **Website**: Chọn website muốn đăng
 - **Tiêu đề**: Tiêu đề bài viết
-- **Category**: Chọn 1 hoặc nhiều category
-- **Publish**: Chọn "Lưu Nháp" hoặc "Đăng Ngay"
+- **Category**: 
+  - Chọn 1 category → tự tạo nếu không tồn tại
+  - Chọn 2+ categories → chỉ tìm (không tạo mới)
+- **Ảnh Featured** (tùy chọn):
+  - Không upload → Stability AI tự tạo
+  - Upload → dùng ảnh của bạn
+- **Publish**: Lưu Nháp hoặc Đăng Ngay
 
 ### 3. Đăng Bài
 - Click "Đăng Bài"
-- Chờ hệ thống:
-  - Tạo nội dung (1500-2000 từ)
-  - Tạo ảnh featured
-  - Upload ảnh lên WordPress
-  - Đăng bài (hoặc lưu nháp)
+- Hệ thống sẽ:
+  1. Tạo nội dung (1500-2000 từ tiếng Anh)
+  2. Tạo/upload ảnh featured
+  3. Upload ảnh vào WordPress
+  4. Rải các ảnh trong bài
+  5. Đăng bài hoặc lưu nháp
 
-## CHẠY LÂUDÀI (24/7)
+### 4. Khi Stability AI Hết Credit
+- Khi API hết credit → modal hiển thị
+- Upload ảnh của bạn
+- Click "Tiếp Tục Với Ảnh Này"
+- Bài vẫn được đăng với ảnh của bạn
 
-Nếu muốn web interface chạy liên tục:
+## CHẠY LIÊN TỤC (24/7)
 
-**Cách 1: Batch File (Đơn giản)**
-1. Tạo file un.bat trong thư mục project:
-\\\atch
-@echo off
-cd /d "%~dp0"
-python app.py
-pause
-\\\
+Nếu muốn web chạy khi khởi động Windows:
 
-2. Double-click un.bat để chạy
-
-**Cách 2: Windows Task Scheduler (24/7)**
+**Windows Task Scheduler:**
 1. Mở Task Scheduler
 2. Create Basic Task
-3. Trigger: At startup (or your desired time)
-4. Action: Run \python.exe\ với argument: \C:\\DangBai\\app.py\
+3. Name: "DangBai Auto Posting"
+4. Trigger: At startup
+5. Action: 
+   - Program: `python.exe`
+   - Arguments: `C:\DangBai\app.py`
+6. Click OK
+
+## FEATURE
+
+✅ Tạo nội dung AI với Groq (1500-2000 từ)
+✅ Tạo ảnh với Stability AI
+✅ Upload ảnh lên WordPress
+✅ Chọn 1 hoặc nhiều categories
+✅ Upload nhiều ảnh (ảnh đầu làm thumbnail)
+✅ Lưu nháp hoặc đăng ngay
+✅ Gợi ý tiêu đề AI
+✅ Web interface đơn giản
+✅ Fallback upload ảnh khi API hết credit
 
 ## TROUBLESHOOTING
 
 ### Lỗi: "Python not found"
-→ Python chưa được cài hoặc chưa add vào PATH
-→ Cài lại Python và chọn "Add Python to PATH"
+→ Cài Python từ https://www.python.org/downloads/
+→ QUAN TRỌNG: Chọn "Add Python to PATH"
 
-### Lỗi: "OPENAI_API_KEY not configured"
-→ Chưa set OPENAI_API_KEY trong .env
-→ Lấy key từ https://platform.openai.com/ → Settings → API keys
+### Lỗi: "GROQ_API_KEY not configured"
+→ Lấy key từ https://console.groq.com/ → API Keys
+→ Paste vào .env
+
+### Lỗi: "STABILITY_API_KEY not configured"
+→ Lấy key từ https://stability.ai/ → API Keys
+→ Paste vào .env
+→ Nếu hết credit, upload ảnh thay vì tạo
 
 ### Lỗi: "Connection refused localhost:5000"
 → Flask server chưa chạy
-→ Chạy \python app.py\ lại
+→ Chạy `python app.py` lại
 
 ### Lỗi: "WordPress credentials invalid"
-→ Kiểm tra username + app password trong .env
-→ Đảm bảo app password được tạo từ WordPress admin
+→ Dùng **App Password**, không phải password đăng nhập
+→ Lấy từ WordPress Admin → Settings → Application Passwords
+
+### Lỗi: "Category not found"
+→ Nếu chọn 2+ categories, phải tồn tại trong WordPress
+→ Tạo category trong WordPress trước, hoặc chọn 1 category
 
 ## CẦN HỖ TRỢ?
 
 Liên hệ: geo@seongon.com
 
 ---
-**Version**: 1.0  
+**Version**: 2.0  
+**Features**: Content AI (Groq), Image Generation (Stability AI), Multiple Images, Category Smart Selection  
 **Last Updated**: 2026-05-11
