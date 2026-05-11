@@ -209,17 +209,45 @@ def generate_image_with_gemini(title, category):
         return None
 
 
-# ── Generate image (router to correct provider) ────────────────────────────────
+# ── Generate image (with fallback logic) ──────────────────────────────────────
 def generate_image(title, category):
-    # Check which image provider to use (default: stability)
-    provider = os.environ.get('IMAGE_GENERATOR', 'stability').lower()
+    """
+    Generate image with fallback chain:
+    1. Try Stability AI (primary)
+    2. If Stability credit exhausted (402), try Gemini (fallback)
+    3. If Gemini fails, return None (trigger manual upload)
+    """
+    print('[generate_image] Attempting image generation with fallback chain')
 
-    if provider == 'gemini':
-        print('[generate_image] Using Gemini AI for image generation')
-        return generate_image_with_gemini(title, category)
+    # Step 1: Try Stability AI
+    print('[generate_image] Step 1: Trying Stability AI...')
+    result = generate_image_with_stability(title, category)
+
+    if result == 'CREDIT_EXHAUSTED':
+        # Stability hết credit, thử Gemini
+        print('[generate_image] Step 2: Stability credit exhausted, trying Gemini AI as fallback...')
+        result = generate_image_with_gemini(title, category)
+
+        if result and result != 'CREDIT_EXHAUSTED':
+            print('[generate_image] OK - Image generated with Gemini (fallback)')
+            return result
+        else:
+            print('[generate_image] ERROR - Both Stability and Gemini failed, requesting manual upload')
+            return None
+    elif result:
+        print('[generate_image] OK - Image generated with Stability')
+        return result
     else:
-        print('[generate_image] Using Stability AI for image generation')
-        return generate_image_with_stability(title, category)
+        # Stability fail for other reasons, thử Gemini
+        print('[generate_image] Stability failed, trying Gemini as fallback...')
+        result = generate_image_with_gemini(title, category)
+
+        if result and result != 'CREDIT_EXHAUSTED':
+            print('[generate_image] OK - Image generated with Gemini (fallback)')
+            return result
+        else:
+            print('[generate_image] ERROR - All providers failed, requesting manual upload')
+            return None
 
 
 # ── Generate image with Stability AI ───────────────────────────────────────────
@@ -263,7 +291,7 @@ def generate_image_with_stability(title, category):
         elif r.status_code == 402:
             print(f'[generate_image_stability] ERROR_402_CREDIT_EXHAUSTED - Stability AI API credit exhausted')
             logger.warning('Stability AI API credit exhausted')
-            return None
+            return 'CREDIT_EXHAUSTED'  # Signal to try fallback
         else:
             print(f'[generate_image_stability] ERROR - API returned {r.status_code}: {r.text[:200]}')
             logger.warning(f'Image generation failed: {r.status_code}')
