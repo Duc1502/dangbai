@@ -116,7 +116,7 @@ Return the complete HTML content now."""
 
     client = Groq(api_key=api_key)
     message = client.chat.completions.create(
-        model='mixtral-8x7b-32768',
+        model='llama-3.1-70b-versatile',
         max_tokens=4096,
         messages=[{'role': 'user', 'content': prompt}],
         temperature=0.7,
