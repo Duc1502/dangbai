@@ -131,35 +131,47 @@ Return the complete HTML content now."""
 def generate_image(title, category):
     api_key = os.environ.get('STABILITY_API_KEY', '')
     if not api_key:
+        print('[generate_image] ❌ STABILITY_API_KEY not found in .env')
         logger.warning('STABILITY_API_KEY chua duoc set, bo qua anh')
         return None
 
+    print(f'[generate_image] Starting image generation for: {title}')
     logger.info(f'Dang tao anh voi Stability AI: {title}')
 
     # Create prompt from title and category
     prompt = f"Professional blog featured image for article about '{title}' in {category} category. Modern design, high quality, professional, eye-catching, suitable for technology and business blog. 4K resolution."
+    print(f'[generate_image] Prompt: {prompt[:100]}...')
 
-    r = requests.post(
-        'https://api.stability.ai/v2beta/stable-image/generate/core',
-        headers={
-            'authorization': f'Bearer {api_key}',
-            'accept': 'image/*',
-        },
-        files={'none': ''},
-        data={
-            'prompt': prompt,
-            'negative_prompt': 'blurry, low quality, watermark',
-            'aspect_ratio': '16:9',
-            'output_format': 'jpeg',
-        },
-        timeout=60
-    )
+    try:
+        r = requests.post(
+            'https://api.stability.ai/v2beta/stable-image/generate/core',
+            headers={
+                'authorization': f'Bearer {api_key}',
+                'accept': 'image/*',
+            },
+            files={'none': ''},
+            data={
+                'prompt': prompt,
+                'negative_prompt': 'blurry, low quality, watermark',
+                'aspect_ratio': '16:9',
+                'output_format': 'jpeg',
+            },
+            timeout=60
+        )
 
-    if r.status_code == 200:
-        logger.info('Anh da tao thanh cong')
-        return r.content
-    else:
-        logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
+        print(f'[generate_image] Response status: {r.status_code}')
+
+        if r.status_code == 200:
+            print(f'[generate_image] ✅ Image generated successfully ({len(r.content)} bytes)')
+            logger.info('Anh da tao thanh cong')
+            return r.content
+        else:
+            print(f'[generate_image] ❌ API returned {r.status_code}: {r.text[:200]}')
+            logger.warning(f'Tao anh that bai: {r.status_code} - {r.text[:200]}')
+            return None
+    except Exception as e:
+        print(f'[generate_image] ❌ Exception: {str(e)}')
+        logger.error(f'Image generation exception: {str(e)}')
         return None
 
 # ── Upload image to WordPress ──────────────────────────────────────────────────
@@ -416,19 +428,32 @@ def main():
 
     try:
         # Buoc 1: Tao noi dung
+        print('\n[STEP 1] Generating content...')
         content = generate_content(args.title, args.category)
+        print(f'[STEP 1] ✅ Content generated: {len(content)} characters')
 
         # Buoc 2: Tao anh (2 anh - 1 featured, 1 trong bai)
+        print('\n[STEP 2] Generating image...')
         media_id = None
         embedded_media_url = None
         image_data = generate_image(args.title, args.category)
+
         if image_data:
+            print(f'[STEP 2] ✅ Image generated: {len(image_data)} bytes')
             try:
-                media_id, _ = upload_image(image_data, args.title, auth, site_url)
+                print('[STEP 2.1] Uploading featured image...')
+                media_id, featured_url = upload_image(image_data, args.title, auth, site_url)
+                print(f'[STEP 2.1] ✅ Featured image uploaded: ID={media_id}, URL={featured_url}')
+
                 # Upload anh thu 2 cho embedded image
+                print('[STEP 2.2] Uploading embedded image...')
                 _, embedded_media_url = upload_image(image_data, f'{args.title}-embedded', auth, site_url)
+                print(f'[STEP 2.2] ✅ Embedded image uploaded: URL={embedded_media_url}')
             except Exception as e:
+                print(f'[STEP 2] ❌ Image upload failed: {e}')
                 logger.warning(f'Upload anh that bai: {e}. Tiep tuc khong co anh.')
+        else:
+            print('[STEP 2] ⚠️  Image generation returned None (failed or API key missing)')
 
         # Format with date, IDs, dividers, TOC, embedded image
         content = format_html_content(args.title, content, args.category, embedded_media_url)
