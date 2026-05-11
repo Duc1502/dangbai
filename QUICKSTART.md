@@ -1,36 +1,40 @@
 ﻿# HƯỚNG DẪN NHANH - START NGAY
 
-## Lần đầu tiên (5 phút)
+## Lần đầu tiên (10 phút)
 
-1. **Cài Python** (nếu chưa có)
-   - Tải từ: https://www.python.org/downloads/
-   - Chọn "Add Python to PATH" khi cài
+### Bước 1: Cài Python (nếu chưa có)
+- Tải từ: https://www.python.org/downloads/
+- QUAN TRỌNG: Chọn "Add Python to PATH" khi cài
+- Click Install
 
-2. **Cài dependencies**
-   - Mở PowerShell trong thư mục dự án
-   - Chạy: \python -m pip install -r requirements.txt\
+### Bước 2: Cài thư viện
+- Right-click file install_dependencies.bat → Run as administrator
+- Chờ cửa sổ CMD đóng lại (tự động)
 
-3. **Cấu hình .env**
-   - Mở file .env bằng Notepad
-   - Thay OPENAI_API_KEY=sk_... bằng API key thực của bạn
-   - Lưu file
+### Bước 3: Cấu hình API Key
+- Mở file .env bằng Notepad
+- Tìm dòng: OPENAI_API_KEY=sk_...
+- Thay sk_... bằng OpenAI API key của bạn
+- Nhấn Ctrl+S để lưu
 
-4. **Chạy lần đầu**
-   - Double-click file \un.bat\
-   - Hoặc chạy: \python app.py\
-   - Mở browser → http://localhost:5000
+### Bước 4: Chạy ứng dụng
+- Double-click file run.bat
+- Mở trình duyệt → http://localhost:5000
+- Xong! Bắt đầu dùng
 
 ## Lần tiếp theo (1 click)
 
-- Double-click \un.bat\ → Xong!
-
-## API Key từ đâu?
-
-1. Vào https://platform.openai.com/
-2. Click "API keys" 
-3. Click "+ Create new secret key"
-4. Copy key → Paste vào .env
+- Double-click run.bat → Chạy ngay!
 
 ---
 
-📖 **Xem chi tiết**: SETUP_GUIDE.md
+## Cần API Key?
+
+1. Vào: https://platform.openai.com/
+2. Click "API keys"
+3. Click "+ Create new secret key"
+4. Copy key → Paste vào file .env
+
+---
+
+Xem chi tiết: SETUP_GUIDE.md
