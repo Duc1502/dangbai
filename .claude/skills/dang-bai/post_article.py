@@ -127,6 +127,24 @@ Return the complete HTML content now."""
     logger.info(f'Noi dung da tao: {len(content)} ky tu')
     return content
 
+# ── Load image from file ──────────────────────────────────────────────────────
+def load_image_from_file(image_path):
+    if not image_path or not os.path.exists(image_path):
+        print(f'[load_image_from_file] ERROR - File not found: {image_path}')
+        logger.error(f'Image file not found: {image_path}')
+        return None
+
+    try:
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+        print(f'[load_image_from_file] OK - Image loaded: {len(image_data)} bytes')
+        logger.info(f'Loaded image from file: {image_path} ({len(image_data)} bytes)')
+        return image_data
+    except Exception as e:
+        print(f'[load_image_from_file] ERROR - Failed to read file: {e}')
+        logger.error(f'Failed to load image file: {e}')
+        return None
+
 # ── Generate image with Stability AI ───────────────────────────────────────────
 def generate_image(title, category):
     api_key = os.environ.get('STABILITY_API_KEY', '')
@@ -405,6 +423,7 @@ def main():
     parser.add_argument('--title', '-t', required=True, help='Tieu de bai viet')
     parser.add_argument('--category', '-c', default='News', help='Ten category (mac dinh: News)')
     parser.add_argument('--draft', action='store_true', help='Luu nhap thay vi publish ngay')
+    parser.add_argument('--image', '-i', help='Duong dan file anh (neu khong co thi tu tao bang Stability AI)')
     args = parser.parse_args()
 
     status = 'draft' if args.draft else 'publish'
@@ -433,13 +452,20 @@ def main():
         print(f'[STEP 1] OK - Content generated: {len(content)} characters')
 
         # Buoc 2: Tao anh (2 anh - 1 featured, 1 trong bai)
-        print('\n[STEP 2] Generating image...')
+        print('\n[STEP 2] Processing image...')
         media_id = None
         embedded_media_url = None
-        image_data = generate_image(args.title, args.category)
+
+        # Check if user provided image file
+        if args.image:
+            print(f'[STEP 2] Loading image from file: {args.image}')
+            image_data = load_image_from_file(args.image)
+        else:
+            print('[STEP 2] Generating image with Stability AI...')
+            image_data = generate_image(args.title, args.category)
 
         if image_data:
-            print(f'[STEP 2] OK - Image generated: {len(image_data)} bytes')
+            print(f'[STEP 2] OK - Image ready: {len(image_data)} bytes')
             try:
                 print('[STEP 2.1] Uploading featured image...')
                 media_id, featured_url = upload_image(image_data, args.title, auth, site_url)
@@ -453,7 +479,7 @@ def main():
                 print(f'[STEP 2] ERROR - Image upload failed: {e}')
                 logger.warning(f'Upload anh that bai: {e}. Tiep tuc khong co anh.')
         else:
-            print('[STEP 2] WARNING - Image generation returned None (failed or API key missing)')
+            print('[STEP 2] WARNING - Image not available (file load or generation failed)')
 
         # Format with date, IDs, dividers, TOC, embedded image
         content = format_html_content(args.title, content, args.category, embedded_media_url)

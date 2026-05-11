@@ -8,6 +8,7 @@ Then visit: http://localhost:5000
 import os
 import subprocess
 import sys
+import tempfile
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 
@@ -81,20 +82,30 @@ Format: List only 5 titles, one per line, no numbering or bullets."""
 
 @app.route('/api/post-article', methods=['POST'])
 def post_article():
+    temp_image_path = None
     try:
-        data = request.json
-
-        # Validate input
-        website = data.get('website')
-        title = data.get('title', '').strip()
-        category = data.get('category', 'News').strip() or 'News'
-        publish = data.get('publish', 'draft')
+        # Get form data and file
+        website = request.form.get('website')
+        title = request.form.get('title', '').strip()
+        category = request.form.get('category', 'News').strip() or 'News'
+        publish = request.form.get('publish', 'draft')
+        image_file = request.files.get('image')
 
         if not website or website not in ['1', '2']:
             return jsonify({'error': 'Invalid website choice'}), 400
 
         if not title:
             return jsonify({'error': 'Title cannot be empty'}), 400
+
+        # Save uploaded image to temp file if provided
+        if image_file and image_file.filename:
+            try:
+                # Create temp directory
+                temp_dir = tempfile.gettempdir()
+                temp_image_path = os.path.join(temp_dir, 'dang_bai_' + image_file.filename)
+                image_file.save(temp_image_path)
+            except Exception as e:
+                return jsonify({'error': f'Failed to save image: {str(e)}'}), 400
 
         # Run post_article.py
         post_article_path = os.path.join(SKILL_DIR, 'post_article.py')
@@ -108,6 +119,9 @@ def post_article():
 
         if publish == 'draft':
             cmd.append('--draft')
+
+        if temp_image_path:
+            cmd.extend(['--image', temp_image_path])
 
         os.chdir(PROJECT_ROOT)
 
@@ -139,6 +153,13 @@ def post_article():
         return jsonify({'error': 'Process timeout (5 minutes)'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        # Clean up temp image file
+        if temp_image_path and os.path.exists(temp_image_path):
+            try:
+                os.remove(temp_image_path)
+            except:
+                pass
 
 if __name__ == '__main__':
     print('\n' + '='*60)

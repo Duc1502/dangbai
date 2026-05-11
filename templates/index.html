@@ -393,6 +393,18 @@
                 </div>
             </div>
 
+            <!-- Image Upload (Optional) -->
+            <div class="form-group">
+                <label for="image">Ảnh Featured (Tùy chọn)</label>
+                <input
+                    type="file"
+                    id="image"
+                    name="image"
+                    accept="image/*"
+                />
+                <p class="info-text">Nếu không tải lên, ảnh sẽ được tạo tự động. Hỗ trợ JPG, PNG, WebP</p>
+            </div>
+
             <!-- Publish Option -->
             <div class="form-group">
                 <label>Đăng Bài</label>
@@ -619,13 +631,18 @@
                 return;
             }
 
-            // Prepare data
-            const data = {
-                website: website,
-                title: title,
-                category: selectedCats.join(', '),
-                publish: document.querySelector('input[name="publish"]:checked').value,
-            };
+            // Prepare FormData for file upload support
+            const formData = new FormData();
+            formData.append('website', website);
+            formData.append('title', title);
+            formData.append('category', selectedCats.join(', '));
+            formData.append('publish', document.querySelector('input[name="publish"]:checked').value);
+
+            // Add image file if selected
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
 
             // Show loading
             submitBtn.disabled = true;
@@ -635,23 +652,20 @@
             try {
                 const response = await fetch('/api/post-article', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
+                    body: formData,
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('✅ ' + result.message, 'success');
+                    showMessage('OK - ' + result.message, 'success');
                     form.reset();
                     document.getElementById('categoryGroup').style.display = 'none';
                 } else {
-                    showMessage('❌ ' + (result.error || 'Lỗi không xác định'), 'error');
+                    showMessage('ERROR - ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showMessage('❌ Lỗi: ' + error.message, 'error');
+                showMessage('ERROR - ' + error.message, 'error');
             } finally {
                 submitBtn.disabled = false;
                 loading.style.display = 'none';
